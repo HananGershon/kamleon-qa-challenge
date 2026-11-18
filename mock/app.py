@@ -1,23 +1,23 @@
-"""Minimal mock of the backend API contract (Part 3)."""
+"""Minimal mock of the backend API contract: the measurement endpoints (Part 3)."""
 
 import asyncio
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
 
 from fastapi import FastAPI, Header, HTTPException, Response
 from pydantic import BaseModel, Field, model_validator
 
 PROCESSING_DELAY = float(os.getenv("MOCK_PROCESSING_DELAY", "0.3"))
-SLOW_EXTRA_DELAY = float(os.getenv("MOCK_SLOW_EXTRA_DELAY", "1.5"))
+# PROCESSING_DELAY + SLOW_EXTRA_DELAY must stay below DATA_API_TIMEOUT, or "slow" ends as "failed".
+SLOW_EXTRA_DELAY = float(os.getenv("MOCK_SLOW_EXTRA_DELAY", "0.7"))
 DATA_API_TIMEOUT = float(os.getenv("MOCK_DATA_API_TIMEOUT", "2.0"))
 
 app = FastAPI(title="Kamleon backend mock")
 
 measurements: dict[str, dict] = {}
 duplicate_index: dict[tuple, str] = {}
-devices: dict[str, dict] = {}
 # asyncio keeps only weak references to tasks; hold them until they finish.
 background_tasks: set = set()
 
@@ -29,7 +29,7 @@ class SensorData(BaseModel):
 
 
 class MeasurementIn(BaseModel):
-    deviceId: str = Field(min_length=1)
+    deviceId: str = Field(min_length=1)  # assumption: no way to register a device, so any ID is accepted
     userId: Optional[str] = None
     sessionId: str = Field(min_length=1)
     startedAt: datetime
@@ -42,14 +42,6 @@ class MeasurementIn(BaseModel):
         if self.completedAt <= self.startedAt:
             raise ValueError("completedAt must be after startedAt")
         return self
-
-
-class ModeIn(BaseModel):
-    mode: str
-
-
-class FirmwareIn(BaseModel):
-    version: str = Field(min_length=1)
 
 
 async def fake_data_api(sensor_data: dict, behaviour: Optional[str]) -> dict:
@@ -131,36 +123,3 @@ async def get_measurement(measurement_id: str):
     if m is None:
         raise HTTPException(status_code=404, detail="Measurement not found")
     return {k: m[k] for k in ("measurementId", "deviceId", "userId", "status", "result")}
-
-
-def get_or_register_device(device_id: str) -> dict:
-    # assumption: the contract has no way to register a device, so any ID is accepted
-    if device_id not in devices:
-        devices[device_id] = {
-            "deviceId": device_id,
-            "status": "online",
-            "mode": "normal",
-            "firmwareVersion": "1.4.2",
-            "lastSeen": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        }
-    return devices[device_id]
-
-
-@app.get("/api/v1/devices/{device_id}")
-async def get_device(device_id: str):
-    return get_or_register_device(device_id)
-
-
-@app.post("/api/v1/devices/{device_id}/mode")
-async def change_mode(device_id: str, body: ModeIn):
-    if body.mode not in ("normal", "maintenance"):
-        raise HTTPException(status_code=422, detail="mode must be normal or maintenance")
-    device = get_or_register_device(device_id)
-    device["mode"] = body.mode
-    return {"deviceId": device_id, "mode": body.mode}
-
-
-@app.post("/api/v1/devices/{device_id}/firmware-update")
-async def start_firmware_update(device_id: str, body: FirmwareIn):
-    get_or_register_device(device_id)
-    return {"deviceId": device_id, "status": "update_started", "targetVersion": body.version}

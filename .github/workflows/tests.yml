@@ -7,6 +7,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -16,8 +17,10 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Start the mock and run the tests
         # Test order is shuffled on every run by pytest-randomly (installed from requirements.txt).
+        # The mock's log goes into the report, so a server error behind a failed test is visible.
         run: |
-          uvicorn mock.app:app --port 8000 &
+          mkdir -p reports
+          uvicorn mock.app:app --port 8000 > reports/mock.log 2>&1 &
           pytest -v --junitxml=reports/junit.xml --html=reports/report.html --self-contained-html
       - uses: actions/upload-artifact@v6
         if: always()

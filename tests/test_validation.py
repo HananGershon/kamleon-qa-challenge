@@ -17,6 +17,7 @@ MISSING = object()
         pytest.param("sensorData", "volume", 0, id="zero-volume"),
         pytest.param("sensorData", "temperature", MISSING, id="sensor-value-missing"),
         pytest.param(None, "completedAt", MISSING, id="cut-off-before-completed"),
+        pytest.param(None, "completedAt", "2000-01-01T00:00:00+00:00", id="ends-before-start"),
     ],
 )
 def test_tc10_invalid_or_incomplete_measurement_rejected(
@@ -35,7 +36,11 @@ def test_tc10_invalid_or_incomplete_measurement_rejected(
 
     # No delete or list endpoint, so prove nothing was stored: the valid version of the
     # same measurement must be created as new (201), not returned as a resend (200).
-    create_measurement(base_url, valid)
+    valid_id = create_measurement(base_url, valid)
+    # Guard: the resend rule this proof relies on really works.
+    resend = requests.post(f"{base_url}/api/v1/measurements", json=valid, timeout=5)
+    assert resend.status_code == 200, resend.text
+    assert resend.json()["measurementId"] == valid_id
 
 
 @pytest.mark.parametrize("ph", [0, 14], ids=["ph-0", "ph-14"])
