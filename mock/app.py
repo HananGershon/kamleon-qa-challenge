@@ -52,7 +52,7 @@ async def fake_data_api(sensor_data: dict, behaviour: Optional[str]) -> dict:
         await asyncio.sleep(DATA_API_TIMEOUT * 10)
     if behaviour == "malformed":
         return {"hydration": "not-a-number"}
-    # Placeholder: the real model belongs to the data team. Different readings must
+    # Placeholder: the real model belongs to the data team. Different volumes (0-100)
     # give different results, so swapped results are detectable (TC-03, TC-04).
     volume = sensor_data["volume"]
     return {"hydration": int(volume) % 101, "volume": volume}
