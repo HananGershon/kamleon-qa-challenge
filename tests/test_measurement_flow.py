@@ -32,11 +32,20 @@ def test_tc02_anonymous_user_result_returned_not_linked(base_url, make_measureme
 
 
 @pytest.mark.mock_only
-def test_tc03_reverse_order_results_each_under_right_user(base_url, make_measurement):
-    first = make_measurement(identified=True, volume=40)
-    second = make_measurement(identified=True, volume=70, device_id=first["deviceId"])
+@pytest.mark.parametrize(
+    "identified",
+    [
+        pytest.param(True, id="tc03-identified-users"),
+        pytest.param(False, id="tc04-anonymous-users"),
+    ],
+)
+def test_tc03_tc04_reverse_order_results_stay_with_their_own_measurement(
+    base_url, make_measurement, identified
+):
+    first = make_measurement(identified=identified, volume=40)
+    second = make_measurement(identified=identified, volume=70, device_id=first["deviceId"])
 
-    # The first user's Data API call is slowed, so the second result comes back first.
+    # The first measurement's Data API call is slowed, so the second result comes back first.
     first_id = create_measurement(base_url, first, data_api="slow")
     second_id = create_measurement(base_url, second)
 
