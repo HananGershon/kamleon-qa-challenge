@@ -31,7 +31,7 @@ Where a test has a matching opposite case, it's noted as "Also": the bad case is
 - **Level:** API
 - **Priority:** P1
 - **Dependencies:** Two known test users, each identified in a session · mocked Data API that can delay one result and return a different value per measurement
-- **Automate?** Yes — every PR
+- **Automate?** Yes — every PR + after deployment (WireMock in the Data API's place on staging)
 
 **TC-04 · Two anonymous users, results return in reverse order → each result on the right measurement**
 - **Risk:** with no user ID to match on, results swap between anonymous measurements and the wrong result is shown.
@@ -40,7 +40,7 @@ Where a test has a matching opposite case, it's noted as "Also": the bad case is
 - **Level:** API
 - **Priority:** P1
 - **Dependencies:** Mocked Data API that can delay one result and return a different value per measurement
-- **Automate?** Yes — every PR
+- **Automate?** Yes — every PR + after deployment (WireMock in the Data API's place on staging)
 
 **TC-05 · Measurement sent for a user not identified in that session → rejected (session validation)**
 - **Risk:** a measurement is saved under a user who wasn't at the device, corrupting their health history.
