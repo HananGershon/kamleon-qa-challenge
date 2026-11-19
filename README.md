@@ -60,7 +60,7 @@ tests/test_validation.py          TC-10
 tests/test_data_api_failures.py   TC-11/TC-12 (mock only)
 pytest.ini                        test path, strict markers, the mock_only marker
 .github/workflows/tests.yml       CI: runs the suite in random order and keeps the reports
-docs/strategy.md                  Part 1: test strategy and roadmap
+docs/strategy.pdf                 Part 1: test strategy and roadmap
 docs/test-design.md               Part 2: test design (14 cases)
 ```
 
@@ -136,7 +136,7 @@ The contract leaves these points open. For each one: the assumption I made, wher
 | No units or valid ranges for sensor values, no minimum volume or duration, no rule on timestamp order, no hydration scale | All fields required (`userId` may be null for anonymous) · volume above 0 · pH 0–14 (the scale itself, not a clinical limit) · no temperature range · end time after start time · hydration is a placeholder that differs per volume | The mock, TC-10 (ranges, required fields, end after start) · TC-02, TC-04 (`userId` null) · TC-03/TC-04 (hydration differs) | What are the units and valid ranges of each value, and the minimum volume and duration? What scale is hydration on? These belong to the data and hardware teams; TC-10 then gets one row per limit. |
 | No field on the result to mark it as unreliable (e.g. readings from a degraded sensor) | Implausible readings end `failed`, with no result shown | TC-08 (top 3, designed, not automated) | How should an untrusted result reach the user: `failed`, a quality field, or "please measure again"? The thresholds belong to the data team; with them as test data, TC-08 can be automated. |
 | No endpoint for the display; the task doesn't say how it gets the result, what it shows, or when it clears | The display shows who the result belongs to | TC-14 (manual, on a real device) | Does the display ask for a result by measurement or by session, and when does it clear? Proposal: show the profile the result was saved under next to it, so a wrong result is visible right away. |
-| Device endpoints: no rule for a measurement sent by a device in `maintenance` or `offline`; a firmware update returns `update_started`, but no status shows that it finished or failed; nothing on the same command received twice | None yet: device endpoints are not in this suite, and the mock has none. | Not in this suite | Does maintenance mode block measurements? How does a client see that a firmware update finished or failed? Is a repeated command applied only once? |
+| Device endpoints: no rule for a measurement sent by a device in `maintenance` or `offline`; a firmware update returns `update_started`, but no status shows that it finished or failed; nothing on the same command received twice | Not in this suite (the mock has no device endpoints). The strategy assumes: maintenance mode rejects measurements; a command to an offline device is queued and applied once. | Not in this suite | Does maintenance mode block measurements? How does a client see that a firmware update finished or failed? Is a repeated command applied only once? |
 
 ## Evidence of execution
 
